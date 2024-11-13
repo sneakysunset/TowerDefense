@@ -1,35 +1,37 @@
-
-
-
 #include "Managers/TDGoldManager.h"
 
+#include "Managers/TDGameMode.h"
 
-// Sets default values for this component's properties
 UTDGoldManager::UTDGoldManager()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
-void UTDGoldManager::BeginPlay()
+void UTDGoldManager::OnStart()
 {
-	Super::BeginPlay();
-
-	// ...
-	
+	OwningGameMode = Cast<ATDGameMode>(GetOwner());
+	CurrentGoldCount = StartGoldCount;
 }
 
-
-// Called every frame
-void UTDGoldManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+bool UTDGoldManager::CanPurchaseTower()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
+	auto CurrentTowerType = OwningGameMode->MainWidgetManager->GetCurrentTowerSpawnType();
+	return CurrentGoldCount >= OwningGameMode->GetTowerSpawnParams(CurrentTowerType).Cost;
 }
 
+bool UTDGoldManager::CanPurchaseUpgrade(int UpgradeCost)
+{
+	return CurrentGoldCount >= UpgradeCost;
+}
+
+void UTDGoldManager::PurchaseTower()
+{
+	auto CurrentTowerType = OwningGameMode->MainWidgetManager->GetCurrentTowerSpawnType();
+	ChangeGoldCount(OwningGameMode->GetTowerSpawnParams(CurrentTowerType).Cost);
+}
+
+void UTDGoldManager::ChangeGoldCount(int Cost)
+{
+	CurrentGoldCount -= Cost;
+	OwningGameMode->MainWidgetManager->MainUserWidget->UpdateCost(CurrentGoldCount);
+}

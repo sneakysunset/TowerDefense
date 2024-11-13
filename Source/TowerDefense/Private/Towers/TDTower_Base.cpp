@@ -1,12 +1,18 @@
 #include "Towers/TDTower_Base.h"
-#include "Managers/TDGameMode.h"
-#include "Towers/TDTowerSlot.h"
 
+#include <Windows.ApplicationModel.Activation.h>
+
+#include "AbilitySystem/TDAbilitySystem.h"
+#include "Managers/TDGameMode.h"
+#include "Managers/TDGoldManager.h"
+#include "Towers/TDTowerSlot.h"
+#include "Managers/TDWidgetManager.h"
 
 ATDTower_Base::ATDTower_Base()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
+	AbilitySystem = CreateDefaultSubobject<UTDAbilitySystem>("Ability System");
 	RootComponent = MeshComponent;
 }
 
@@ -25,37 +31,37 @@ void ATDTower_Base::Tick(float DeltaTime)
 
 void ATDTower_Base::OnStartHover()
 {
-	auto Material = CurrentGameMode->CanPurchaseUpgrade(UpgradeCost)? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
+	auto Material = CurrentGameMode->GoldManager->CanPurchaseUpgrade(UpgradeCost)? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
 	MeshComponent->SetMaterial(0, Material);
-	CurrentGameMode->UpdateWidgetUpgradePrice(UpgradeCost);
+	CurrentGameMode->MainWidgetManager->UpdateWidgetUpgradePrice(UpgradeCost);
 }
 
 void ATDTower_Base::OnStopHover()
 {
 	MeshComponent->SetMaterial(0, NormalMaterial);
-	CurrentGameMode->UpdateWidgetUpgradePrice(0);
+	CurrentGameMode->MainWidgetManager->UpdateWidgetUpgradePrice(0);
 }
 
 void ATDTower_Base::OnClick()
 {
 	FRotator NewRotation = GetActorRotation();
-	switch(CurrentGameMode->GetEditMode())
+	switch(CurrentGameMode->MainWidgetManager->GetEditMode())
 	{
 	case ETDEditMode::ROTATE:
 		NewRotation.Yaw += 90;
 		SetActorRotation(NewRotation);
 		break;
-	case ETDEditMode::DELETE:
+	case ETDEditMode::DELETE_TOWER:
 		Destroy();
 		break;
 	case ETDEditMode::UPGRADE:
-		if(!CurrentGameMode->CanPurchaseUpgrade(UpgradeCost))
+		if(!CurrentGameMode->GoldManager->CanPurchaseUpgrade(UpgradeCost))
 		{
 			return;
 		}
 
 		UpgradeTower();
-		CurrentGameMode->ChangeGoldCount(UpgradeCost);
+		CurrentGameMode->GoldManager->ChangeGoldCount(UpgradeCost);
 		break;
 	}
 }

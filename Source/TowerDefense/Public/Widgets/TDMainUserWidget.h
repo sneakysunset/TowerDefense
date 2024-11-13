@@ -19,4 +19,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateUpgradePrice(int newUpgradePrice);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnBeginPlay();
+
 };

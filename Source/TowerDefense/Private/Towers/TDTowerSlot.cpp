@@ -1,6 +1,7 @@
 #include "Towers/TDTowerSlot.h"
 
 #include "Managers/TDGameMode.h"
+#include "Managers/TDGoldManager.h"
 #include "Towers/TDTower_Base.h"
 
 ATDTowerSlot::ATDTowerSlot()
@@ -20,7 +21,7 @@ void ATDTowerSlot::BeginPlay()
 void ATDTowerSlot::OnStartHover()
 {
 	if(CurrentTower != nullptr) return;
-	auto Material = CurrentGameMode->CanPurchaseTower() ? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
+	auto Material = CurrentGameMode->GoldManager->CanPurchaseTower() ? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
 	MeshComponent->SetMaterial(0, Material);
 }
 
@@ -31,15 +32,13 @@ void ATDTowerSlot::OnStopHover()
 
 void ATDTowerSlot::OnClick()
 {
-	if(CurrentTower != nullptr || !CurrentGameMode->CanPurchaseTower()) return;
- 	TSubclassOf<ATDTower_Base> TowerPrefab = CurrentGameMode->GetTowerPrefab();
-	FVector SpawnPosition = GetActorLocation() + FVector(0,0,50);
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Owner = this;
+	if(CurrentTower != nullptr || !CurrentGameMode->GoldManager->CanPurchaseTower()) return;
 	
-	CurrentTower = GetWorld()->SpawnActor<ATDTower_Base>(TowerPrefab, SpawnPosition, FRotator::ZeroRotator, SpawnParameters);
-	CurrentGameMode->PurchaseTower();
-
+	FVector SpawnPosition = GetActorLocation() + FVector(0,0,50);
+ 	if(!CurrentGameMode->SpawnTower(SpawnPosition, this, CurrentTower))
+ 	{
+ 		return;
+ 	}
 	CurrentTower->OnDestructionEvent.BindDynamic(this, &ATDTowerSlot::OnTowerDestroyed);
 	
 	OnStopHover();

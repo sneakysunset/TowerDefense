@@ -1,36 +1,26 @@
-
-
-
 #include "Managers/TDWidgetManager.h"
+#include "Widgets/TDMainUserWidget.h"
 
-
-// Sets default values for this component's properties
 UTDWidgetManager::UTDWidgetManager()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
 void UTDWidgetManager::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	if(WidgetClass)
+	{
+		MainUserWidget = Cast<UTDMainUserWidget>(CreateWidget(GetWorld(), WidgetClass));
+		if(MainUserWidget)
+		{
+			MainUserWidget->AddToViewport();
+		}
+	}
 }
 
-
-// Called every frame
-void UTDWidgetManager::TickComponent(float DeltaTime, ELevelTick TickType,
-                                     FActorComponentTickFunction* ThisTickFunction)
+void UTDWidgetManager::UpdateWidgetUpgradePrice(int NewUpgradePrice)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
+	MainUserWidget->UpdateUpgradePrice(NewUpgradePrice);
 }
 

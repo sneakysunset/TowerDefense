@@ -6,6 +6,8 @@
 #include "Interfaces/TDHoverable.h"
 #include "TDTower_Base.generated.h"
 
+class UTDTowerAbility;
+class UTDAbilitySystem;
 DECLARE_DYNAMIC_DELEGATE(FOnDestruction);
 
 class ATDGameMode;
@@ -19,8 +21,11 @@ public:
 	ATDTower_Base();
 
 	UPROPERTY(EditAnywhere, Category="", meta=(AllowPrivateAccess))
+	TObjectPtr<UTDAbilitySystem> AbilitySystem;
+	
+	UPROPERTY(EditAnywhere, Category="", meta=(AllowPrivateAccess))
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
-
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> HighlightedMaterial;
 
