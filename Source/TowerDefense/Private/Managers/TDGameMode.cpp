@@ -38,7 +38,7 @@ void ATDGameMode::OnHitNexus(ATDMonster_Base* Monster, int Damage)
 	WaveManager->OnMonsterDestroyed(Monster);
 }
 
- bool ATDGameMode::SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base* OutTower)
+ bool ATDGameMode::SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base*& OutTower)
 {
 	auto TowerParams = GetTowerSpawnParams(MainWidgetManager->GetCurrentTowerSpawnType());
 	if(TowerParams.TowerPrefab == nullptr)

@@ -16,7 +16,7 @@ void UTDAbilitySystem::BeginPlay()
 		UE_LOG(LogTemp, Error, TEXT("No Tower Subclass Selected in Ability System"));
 		return;
 	}
-	TowerAbility = NewObject<UTDTowerAbility>(this, AbilityClass);
+	TowerAbility = NewObject<UTDTowerAbility>(GetOwner(), AbilityClass);
 	TowerAbility->Initialize(GetOwner(), AbilityStatsOverride);
 }
 

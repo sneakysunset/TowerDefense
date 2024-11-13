@@ -35,10 +35,12 @@ void ATDTowerSlot::OnClick()
 	if(CurrentTower != nullptr || !CurrentGameMode->GoldManager->CanPurchaseTower()) return;
 	
 	FVector SpawnPosition = GetActorLocation() + FVector(0,0,50);
- 	if(!CurrentGameMode->SpawnTower(SpawnPosition, this, CurrentTower))
+	ATDTower_Base* NewTowerBase = nullptr;
+ 	if(!CurrentGameMode->SpawnTower(SpawnPosition, this, NewTowerBase))
  	{
  		return;
  	}
+	CurrentTower = NewTowerBase;
 	CurrentTower->OnDestructionEvent.BindDynamic(this, &ATDTowerSlot::OnTowerDestroyed);
 	
 	OnStopHover();

@@ -91,5 +91,20 @@ bool UTDTowerAbility::GetMonstersInCone(TArray<ATDMonster_Base*> OutMonsters) co
 void UTDTowerAbility::DrawDebugCone()
 {
 	FColor DebugColor = FColor::Blue.WithAlpha(100);
-	DrawDebugCircleArc(GetWorld(), Owner->GetActorLocation(), AbilityStats.Range, Owner->GetActorForwardVector(), AbilityStats.ConeAngle, 8, DebugColor,true);
+	float HalfWidth = AbilityStats.ConeAngle / 2.0f;
+	int32 NumberOfSegments = 20;
+	
+	FVector PreviousPoint =  Owner->GetActorLocation();
+	for(int i = 0; i < NumberOfSegments; i++)
+	{
+		FRotator Rotation(0, -HalfWidth + (i * AbilityStats.ConeAngle / (NumberOfSegments - 1)), 0);
+		FVector EndPoint = Owner->GetActorLocation() + Rotation.RotateVector(Owner->GetActorRightVector() * AbilityStats.Range);
+		PreviousPoint = AbilityStats.ConeAngle > 355 && i == 0 ? EndPoint : PreviousPoint;
+		DrawDebugLine(GetWorld(), PreviousPoint, EndPoint, DebugColor, true, -1, 0, 15);
+		PreviousPoint = EndPoint;
+	}
+	if(AbilityStats.ConeAngle <= 355)
+	{
+		DrawDebugLine(GetWorld(), PreviousPoint, Owner->GetActorLocation(), DebugColor, true, -1, 0, 15);
+	}
 } 

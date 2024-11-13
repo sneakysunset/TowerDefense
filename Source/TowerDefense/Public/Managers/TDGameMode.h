@@ -71,7 +71,7 @@ public:
 	void OnHitNexus(ATDMonster_Base* Monster, int Damage);
 
 	UFUNCTION()
-	bool SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base* OutTower);
+	bool SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base*& OutTower);
 	
 	UFUNCTION(BlueprintCallable)
 	int GetTowerCost(ETDTowerType TowerType){return TowerDictionary[TowerType].Cost;}

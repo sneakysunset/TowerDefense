@@ -1,7 +1,4 @@
 #include "Towers/TDTower_Base.h"
-
-#include <Windows.ApplicationModel.Activation.h>
-
 #include "AbilitySystem/TDAbilitySystem.h"
 #include "Managers/TDGameMode.h"
 #include "Managers/TDGoldManager.h"
@@ -50,9 +47,11 @@ void ATDTower_Base::OnClick()
 	case ETDEditMode::ROTATE:
 		NewRotation.Yaw += 90;
 		SetActorRotation(NewRotation);
+		CurrentGameMode->TriggerUpdateDebug();
 		break;
 	case ETDEditMode::DELETE_TOWER:
 		Destroy();
+		CurrentGameMode->TriggerUpdateDebug();
 		break;
 	case ETDEditMode::UPGRADE:
 		if(!CurrentGameMode->GoldManager->CanPurchaseUpgrade(UpgradeCost))
@@ -69,7 +68,7 @@ void ATDTower_Base::OnClick()
 void ATDTower_Base::Destroyed()
 {
 	Super::Destroyed();
-	OnDestructionEvent.Execute();
+	OnDestructionEvent.ExecuteIfBound();
 }
 
 void ATDTower_Base::UpgradeTower()
