@@ -6,7 +6,7 @@
 #include "TDTowerAbility.generated.h"
 
 class ATDGameMode;
-class ATDMonster_Base;
+class ATDMonster;
 enum class ETDAttributeType : uint8;
 
 
@@ -16,7 +16,7 @@ class TOWERDEFENSE_API UTDTowerAbility : public UObject
 {
 	GENERATED_BODY()
 
-public:
+protected:
 	UPROPERTY(EditAnywhere)
 	FTowerAbilityStats AbilityStats;
 
@@ -26,11 +26,13 @@ public:
 	UPROPERTY()
 	TObjectPtr<ATDGameMode> GameMode;
 	
+	UPROPERTY()
+	bool IsMarkedAsDeleted;
+	
 	FTimerHandle ActivationTimerHandle;
 
-	UPROPERTY()
-	bool IsMonsterInRange;
 
+public:
 	UFUNCTION()
 	virtual void Initialize(AActor* Outer, FTowerAbilityStats StatsOverride);
 	
@@ -38,17 +40,23 @@ public:
 	virtual void ActivateAbility();
 
 	UFUNCTION()
-	virtual void AbilityEffect();
+	virtual void OnAbilityTriggered();
 
 	UFUNCTION()
-	virtual void StopAbility();
-
-	UFUNCTION()
-	virtual void PauseAbility(bool ToPause);
+	virtual void OnProjectileHit(AActor* HitActor);
 	
 	UFUNCTION()
-	bool GetMonstersInCone(TArray<ATDMonster_Base*> OutMonsters) const;
+	virtual void AbilityEffect(AActor* HitActor = nullptr);
 
 	UFUNCTION()
+	bool GetMonstersInCone(TArray<ATDMonster*>& OutMonsters) const;
+
+	UFUNCTION()
+	void UpdateStats(FTowerAbilityStats StatsOverride);
+	
+	UFUNCTION()
 	void DrawDebugCone();
+
+	UFUNCTION()
+	void SetMarkedAsDeleted(){IsMarkedAsDeleted = true;}
 };

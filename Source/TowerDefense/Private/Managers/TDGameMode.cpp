@@ -4,11 +4,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Managers/TDMonsterSpline.h"
 #include "Managers/TDNexus.h"
-#include "Monsters/TDMonster_Base.h"
+#include "Monsters/TDMonster.h"
 #include "Blueprint/UserWidget.h"
 #include "Managers/TDGoldManager.h"
 #include "Managers/TDWaveManager.h"
-#include "Towers/TDTower_Base.h"
+#include "Towers/TDTower.h"
 #include "Widgets/TDMainUserWidget.h"
 
 ATDGameMode::ATDGameMode()
@@ -29,30 +29,13 @@ void ATDGameMode::BeginPlay()
 	MainWidgetManager->MainUserWidget->OnBeginPlay();
 }
 
-void ATDGameMode::OnHitNexus(ATDMonster_Base* Monster, int Damage)
+void ATDGameMode::OnHitNexus(ATDMonster* Monster, int Damage)
 {
 	if(!Nexus->OnHit(Damage))
 	{
 		OnGameOver();
 	}
 	WaveManager->OnMonsterDestroyed(Monster);
-}
-
- bool ATDGameMode::SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base*& OutTower)
-{
-	auto TowerParams = GetTowerSpawnParams(MainWidgetManager->GetCurrentTowerSpawnType());
-	if(TowerParams.TowerPrefab == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Tower Subclass is nullptr"));
-		return false;
-	}
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Owner = TowerOwner;
-	OutTower = GetWorld()->SpawnActor<ATDTower_Base>(TowerParams.TowerPrefab, Position,  FRotator::ZeroRotator, SpawnParameters);
-
-	GoldManager->PurchaseTower();
-	TriggerUpdateDebug();
-	return true;
 }
 
 void ATDGameMode::TriggerUpdateDebug()

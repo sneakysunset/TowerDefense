@@ -2,7 +2,7 @@
 
 #include "Managers/TDGameMode.h"
 #include "Managers/TDGoldManager.h"
-#include "Towers/TDTower_Base.h"
+#include "Towers/TDTower.h"
 
 ATDTowerSlot::ATDTowerSlot()
 {
@@ -35,12 +35,18 @@ void ATDTowerSlot::OnClick()
 	if(CurrentTower != nullptr || !CurrentGameMode->GoldManager->CanPurchaseTower()) return;
 	
 	FVector SpawnPosition = GetActorLocation() + FVector(0,0,50);
-	ATDTower_Base* NewTowerBase = nullptr;
- 	if(!CurrentGameMode->SpawnTower(SpawnPosition, this, NewTowerBase))
- 	{
- 		return;
- 	}
-	CurrentTower = NewTowerBase;
+	TSubclassOf<ATDTower> TowerPrefab = CurrentGameMode->GetCurrentTowerPrefab();
+	if(!IsValid(TowerPrefab))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Tower Subclass is nullptr"));
+		return ;
+	}
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	CurrentTower = GetWorld()->SpawnActor<ATDTower>(TowerPrefab, SpawnPosition,  FRotator::ZeroRotator, SpawnParameters);
+	
+	
+	CurrentGameMode->GoldManager->PurchaseTower();
 	CurrentTower->OnDestructionEvent.BindDynamic(this, &ATDTowerSlot::OnTowerDestroyed);
 	
 	OnStopHover();

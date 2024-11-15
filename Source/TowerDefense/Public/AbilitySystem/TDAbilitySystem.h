@@ -4,6 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "TDAbilitySystem.generated.h"
 
+class ATDTowerProjectile;
 class UTDTowerAbility;
 
 
@@ -15,31 +16,86 @@ enum class ETDAttributeType : uint8
 	Speed
 };
 
+UENUM()
+enum class ETDAbilitySpeed : uint8
+{
+	Instant,
+	Lingering
+};
+
+UENUM()
+enum class ETDAbilityCustomParameterTypes : uint8
+{
+	None,
+	Grenade,
+	Tesla
+};
+
+UENUM()
+enum class ETDAbilitySortingType : uint8
+{
+	ClosestMonster,
+	FurthestMonster,
+	MostProgressOnPath,
+	LeastProgressOnPath,
+	NONE
+};
+
 USTRUCT(BlueprintType)
 struct FTowerAbilityStats
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ETDAttributeType AbilityType;
 
-	UPROPERTY()
+	
+	UPROPERTY(EditAnywhere)
+	ETDAttributeType TargetAttribute;
+
+	UPROPERTY(EditAnywhere)
+	ETDAbilitySpeed AbilitySpeed;
+
+	UPROPERTY(EditAnywhere)
+	ETDAbilitySortingType SortingType;
+	
+	UPROPERTY(EditAnywhere)
 	float AbilityMagnitude;
 	
 	UPROPERTY(EditAnywhere)
-	float Cooldown = 1.0f;
+	float Cooldown;
 
 	UPROPERTY(EditAnywhere)
-	float Range = 500.0f;
+	float Range;
 
 	UPROPERTY(EditAnywhere)
-	float ConeAngle = 45.0f;
+	float ConeAngle;
+	
+	UPROPERTY(EditAnywhere, meta=(EditCondition="AbilitySpeed == EETDAbilitySpeed::Lingering", EditConditionHides))
+	float Duration ;
+
+	UPROPERTY(EditAnywhere,  meta=(EditCondition="AbilitySpeed == EETDAbilitySpeed::Lingering", EditConditionHides))
+	bool IsAdditive;
 
 	UPROPERTY(EditAnywhere)
-	bool IsActivatingWithNoMonsterInRange;
+	bool IsUsingProjectiles;
+	 
+	UPROPERTY(EditAnywhere, meta=(EditCondition="IsUsingProjectiles", EditConditionHides))
+	float ProjectileSpeed;
+
+	UPROPERTY(EditAnywhere, meta=(EditCondition="IsUsingProjectiles", EditConditionHides))
+	TSubclassOf<ATDTowerProjectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere)
+	int UpgradePrice;
 	
 	UPROPERTY(EditAnywhere)
-	float InactiveCheckForMonstersRate = .25f;
+	ETDAbilityCustomParameterTypes CustomParametersToShow;
+	
+	UPROPERTY(EditAnywhere, meta=(EditCondition="CustomParametersToShow == ETDAbilityCustomParameterTypes::Grenade", EditConditionHides))
+	float RadiusOfBlast;
+
+	UPROPERTY(EditAnywhere, meta=(EditCondition="CustomParametersToShow == ETDAbilityCustomParameterTypes::Tesla", EditConditionHides))
+	int NumberOfRiples;
+	
 };
 
 
@@ -56,7 +112,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:
+private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UTDTowerAbility> AbilityClass;
 
@@ -64,5 +120,21 @@ public:
 	TObjectPtr<UTDTowerAbility> TowerAbility;
 
 	UPROPERTY(EditAnywhere)
-	FTowerAbilityStats AbilityStatsOverride;
+	TArray<FTowerAbilityStats> AbilityStatsOverride;
+
+	UPROPERTY(VisibleAnywhere)
+	int CurrentTowerLevel = 0;
+
+public:
+	UFUNCTION()
+	void UpgradeTower();
+
+	UFUNCTION()
+	bool IsTowerAtMaxLevel(){return CurrentTowerLevel >= AbilityStatsOverride.Num() - 1;}
+
+	UFUNCTION()
+	void MarkAsDestroyed();
+
+	UFUNCTION()
+	int GetUpgradePrice(){return AbilityStatsOverride[CurrentTowerLevel].UpgradePrice;}
 };

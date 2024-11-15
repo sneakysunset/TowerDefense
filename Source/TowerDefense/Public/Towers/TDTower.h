@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Interfaces/TDClickable.h"
 #include "Interfaces/TDHoverable.h"
-#include "TDTower_Base.generated.h"
+#include "TDTower.generated.h"
 
 class UTDTowerAbility;
 class UTDAbilitySystem;
@@ -13,12 +13,12 @@ DECLARE_DYNAMIC_DELEGATE(FOnDestruction);
 class ATDGameMode;
 
 UCLASS()
-class TOWERDEFENSE_API ATDTower_Base : public AActor, public ITDHoverable, public ITDClickable
+class TOWERDEFENSE_API ATDTower : public AActor, public ITDHoverable, public ITDClickable
 {
 	GENERATED_BODY()
 
 public:
-	ATDTower_Base();
+	ATDTower();
 
 	UPROPERTY(EditAnywhere, Category="", meta=(AllowPrivateAccess))
 	TObjectPtr<UTDAbilitySystem> AbilitySystem;
@@ -38,20 +38,13 @@ public:
 	UPROPERTY()
 	TObjectPtr<ATDGameMode> CurrentGameMode;
 
-	UPROPERTY(EditAnywhere)
-	int UpgradeCost;
-
 public:
 	FOnDestruction OnDestructionEvent;
 	
 protected:
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 	virtual void OnStartHover() override;
 	virtual void OnStopHover() override;
 	virtual void OnClick() override;
 	virtual void Destroyed() override;;
-
-	UFUNCTION()
-	virtual void UpgradeTower();
 };

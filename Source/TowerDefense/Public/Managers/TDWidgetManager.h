@@ -47,13 +47,13 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	ETDEditMode GetEditMode(){return CurrentEditMode;}
 	
 	UFUNCTION(BlueprintCallable)
 	void SetEditMode(ETDEditMode NewEditMode){CurrentEditMode = NewEditMode;}
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	ETDTowerType GetCurrentTowerSpawnType(){return CurrentTowerSpawnType;}
 	
 	UFUNCTION(BlueprintCallable)
@@ -61,4 +61,7 @@ public:
 
 	UFUNCTION()
 	void UpdateWidgetUpgradePrice(int NewUpgradePrice);
+
+	UFUNCTION()
+	void UpdateWidgetNexusHP(float newPercent);
 };

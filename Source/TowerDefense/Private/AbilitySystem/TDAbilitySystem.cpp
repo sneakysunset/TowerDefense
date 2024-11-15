@@ -1,6 +1,4 @@
-
 #include "AbilitySystem/TDAbilitySystem.h"
-
 #include "AbilitySystem/TDTowerAbility.h"
 
 UTDAbilitySystem::UTDAbilitySystem()
@@ -17,7 +15,18 @@ void UTDAbilitySystem::BeginPlay()
 		return;
 	}
 	TowerAbility = NewObject<UTDTowerAbility>(GetOwner(), AbilityClass);
-	TowerAbility->Initialize(GetOwner(), AbilityStatsOverride);
+	TowerAbility->Initialize(GetOwner(), AbilityStatsOverride[0]);
+}
+
+void UTDAbilitySystem::UpgradeTower()
+{
+	CurrentTowerLevel++;
+	TowerAbility->UpdateStats(AbilityStatsOverride[CurrentTowerLevel]);
+}
+
+void UTDAbilitySystem::MarkAsDestroyed()
+{
+	TowerAbility->SetMarkedAsDeleted();
 }
 
 

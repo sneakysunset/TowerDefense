@@ -1,4 +1,9 @@
 #include "Managers/TDNexus.h"
+#include "Kismet/GameplayStatics.h"
+#include "Managers/TDGameMode.h"
+#include "Managers/TDWaveManager.h"
+#include "Managers/TDMonsterSpline.h"
+#include "Monsters/TDMonster.h"
 
 ATDNexus::ATDNexus()
 {
@@ -10,6 +15,7 @@ ATDNexus::ATDNexus()
 void ATDNexus::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentNexusHealthPoints = StartNexusHealthPoints;
 }
 
 void ATDNexus::OnGameOver()
@@ -20,6 +26,7 @@ void ATDNexus::OnGameOver()
 bool ATDNexus::OnHit(int Damage)
 {
 	CurrentNexusHealthPoints -= Damage;
+	Cast<ATDGameMode>(GetWorld()->GetAuthGameMode())->MainWidgetManager->UpdateWidgetNexusHP(float(CurrentNexusHealthPoints) / float(StartNexusHealthPoints));
 	if(CurrentNexusHealthPoints <= 0)
 	{
 		OnGameOver();

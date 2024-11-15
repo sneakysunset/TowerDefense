@@ -1,8 +1,11 @@
 #include "AbilitySystem/TDTowerAbility.h"
+
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Managers/TDGameMode.h"
 #include "Managers/TDWaveManager.h"
-#include "Monsters/TDMonster_Base.h"
+#include "Monsters/TDMonster.h"
+#include "Towers/TDTowerProjectile.h"
 
 void UTDTowerAbility::Initialize(AActor* Outer, FTowerAbilityStats StatsOverride)
 {
@@ -10,60 +13,55 @@ void UTDTowerAbility::Initialize(AActor* Outer, FTowerAbilityStats StatsOverride
 	AbilityStats = StatsOverride;
 	GameMode = Cast<ATDGameMode>(GetWorld()->GetAuthGameMode());
 	GameMode->OnUpdateDebugsEvent.AddDynamic(this, &UTDTowerAbility::DrawDebugCone);
+	GameMode->TriggerUpdateDebug();
+	ActivateAbility();
 }
 
 void UTDTowerAbility::ActivateAbility()
 {
-	float TimerRate = IsMonsterInRange || AbilityStats.IsActivatingWithNoMonsterInRange ? AbilityStats.Cooldown : AbilityStats.InactiveCheckForMonstersRate;
+	float FirstIterationCooldown = GetWorld()->GetTimerManager().IsTimerActive(ActivationTimerHandle) ?
+		AbilityStats.Cooldown : AbilityStats.Cooldown - GetWorld()->GetTimerManager().GetTimerElapsed(ActivationTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(ActivationTimerHandle);
-	GetWorld()->GetTimerManager().SetTimer(ActivationTimerHandle, this, &UTDTowerAbility::AbilityEffect, AbilityStats.Cooldown, true);
+	GetWorld()->GetTimerManager().SetTimer(ActivationTimerHandle, this, &UTDTowerAbility::OnAbilityTriggered, AbilityStats.Cooldown, true, FirstIterationCooldown);
 }
 
-void UTDTowerAbility::AbilityEffect()
+void UTDTowerAbility::OnAbilityTriggered()
 {
-	TArray<ATDMonster_Base*> Monsters;
-	if(GetMonstersInCone(Monsters) || AbilityStats.IsActivatingWithNoMonsterInRange)
+	
+	if(AbilityStats.IsUsingProjectiles)
 	{
-		if(!IsMonsterInRange)
+		TArray<ATDMonster*> Monsters;
+		if(!GetMonstersInCone(Monsters))
 		{
-			IsMonsterInRange = true;
-			ActivateAbility();
-		}
-	}
-	else
-	{
-		if(IsMonsterInRange)
-		{
-			IsMonsterInRange = false;
-			ActivateAbility();
 			return;
 		}
-	}
-}
-
-void UTDTowerAbility::StopAbility()
-{
-	if(GetWorld()->GetTimerManager().IsTimerActive(ActivationTimerHandle))
-	{
-		GetWorld()->GetTimerManager().ClearTimer(ActivationTimerHandle);
-	}
-}
-
-void UTDTowerAbility::PauseAbility(bool ToPause)
-{
-	if(ToPause && GetWorld()->GetTimerManager().IsTimerActive(ActivationTimerHandle))
-	{
-		GetWorld()->GetTimerManager().UnPauseTimer(ActivationTimerHandle);
+		FVector SpawnPosition = Owner->GetActorLocation() + Owner->GetActorForwardVector() + FVector(0, 0, 200);
+		FVector Direction = (Monsters[0]->GetActorLocation() - SpawnPosition).GetSafeNormal();
+		Direction.Z = 0;
+		FRotator SpawnRotation = Direction.Rotation();
+		FActorSpawnParameters SpawnParams;
+		ATDTowerProjectile* Projectile =  GetWorld()->SpawnActor<ATDTowerProjectile>(AbilityStats.ProjectileClass, SpawnPosition, SpawnRotation, SpawnParams);
+		Projectile->Initialize(AbilityStats.ProjectileSpeed, Monsters[0]);
+		Projectile->OnProjectileHitEvent.BindDynamic(this, &UTDTowerAbility::OnProjectileHit);
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().PauseTimer(ActivationTimerHandle);
+		AbilityEffect();
 	}
 }
 
-bool UTDTowerAbility::GetMonstersInCone(TArray<ATDMonster_Base*> OutMonsters) const
+void UTDTowerAbility::OnProjectileHit(AActor* HitActor)
 {
-	TArray<ATDMonster_Base*> FoundMonsters = GameMode->WaveManager->GetMonsters();
+	AbilityEffect(HitActor);
+}
+
+void UTDTowerAbility::AbilityEffect(AActor* HitActor)
+{
+}
+
+bool UTDTowerAbility::GetMonstersInCone(TArray<ATDMonster*>& OutMonsters) const
+{
+	TArray<ATDMonster*> FoundMonsters = GameMode->WaveManager->GetMonsters();
 	OutMonsters.Reserve(FoundMonsters.Num());
 	
 	FVector TowerLocation = Owner->GetActorLocation();
@@ -79,17 +77,51 @@ bool UTDTowerAbility::GetMonstersInCone(TArray<ATDMonster_Base*> OutMonsters) co
 		
 		FVector DirectionToMonster = (Monster->GetActorLocation() - TowerLocation).GetSafeNormal();
 		float AngleToMonster = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(TowerForward, DirectionToMonster)));
-		if (AngleToMonster <= AbilityStats.ConeAngle)
+		if (AngleToMonster <= AbilityStats.ConeAngle / 2)
 		{
-			OutMonsters.Add(Cast<ATDMonster_Base>(Monster));
+			OutMonsters.Add(Cast<ATDMonster>(Monster));
 		}
 	}
 	OutMonsters.Shrink();
-	return OutMonsters.Num() > 0;
+	if(OutMonsters.Num() == 0) return false;
+	if(AbilityStats.SortingType != ETDAbilitySortingType::NONE)
+	{
+		Algo::Sort(OutMonsters, [this](const ATDMonster* m1, const ATDMonster* m2)
+		{
+			switch(AbilityStats.SortingType)
+			{
+			case ETDAbilitySortingType::ClosestMonster:
+				return FVector::Distance(Owner->GetActorLocation(), m1->GetActorLocation()) < FVector::Distance(Owner->GetActorLocation(), m2->GetActorLocation());
+			case ETDAbilitySortingType::FurthestMonster:
+				return FVector::Distance(Owner->GetActorLocation(), m1->GetActorLocation()) > FVector::Distance(Owner->GetActorLocation(), m2->GetActorLocation());
+			case ETDAbilitySortingType::MostProgressOnPath:
+				return m1->GetProgress() > m2->GetProgress();
+			case ETDAbilitySortingType::LeastProgressOnPath:
+				return m1->GetProgress() < m2->GetProgress();
+			}
+			return false;
+		});
+		//DrawDebugLine(GetWorld(), Owner->GetActorLocation(), OutMonsters[0]->GetActorLocation(), FColor::Red, false, 1, 0, 10);
+	}
+	return true;
+
+	for(int i = 1; i < OutMonsters.Num(); i++)
+	{
+		DrawDebugLine(GetWorld(), Owner->GetActorLocation(), OutMonsters[i]->GetActorLocation(), FColor::Black, false, 1, 0, 5);
+	}
+}
+
+void UTDTowerAbility::UpdateStats(FTowerAbilityStats StatsOverride)
+{
+	UE_LOG(LogTemp, Warning, TEXT("stats are upgrades"))
+	AbilityStats = StatsOverride;
 }
 
 void UTDTowerAbility::DrawDebugCone()
 {
+	if(IsMarkedAsDeleted)
+		return;
+		
 	FColor DebugColor = FColor::Blue.WithAlpha(100);
 	float HalfWidth = AbilityStats.ConeAngle / 2.0f;
 	int32 NumberOfSegments = 20;
@@ -98,7 +130,7 @@ void UTDTowerAbility::DrawDebugCone()
 	for(int i = 0; i < NumberOfSegments; i++)
 	{
 		FRotator Rotation(0, -HalfWidth + (i * AbilityStats.ConeAngle / (NumberOfSegments - 1)), 0);
-		FVector EndPoint = Owner->GetActorLocation() + Rotation.RotateVector(Owner->GetActorRightVector() * AbilityStats.Range);
+		FVector EndPoint = Owner->GetActorLocation() + Rotation.RotateVector(Owner->GetActorForwardVector() * AbilityStats.Range);
 		PreviousPoint = AbilityStats.ConeAngle > 355 && i == 0 ? EndPoint : PreviousPoint;
 		DrawDebugLine(GetWorld(), PreviousPoint, EndPoint, DebugColor, true, -1, 0, 15);
 		PreviousPoint = EndPoint;

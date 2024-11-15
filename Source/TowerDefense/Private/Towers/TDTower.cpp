@@ -1,11 +1,15 @@
-#include "Towers/TDTower_Base.h"
+#include "Towers/TDTower.h"
+
+#include <IVectorChangedEventArgs.h>
+
 #include "AbilitySystem/TDAbilitySystem.h"
+#include "AbilitySystem/TDTowerAbility.h"
 #include "Managers/TDGameMode.h"
 #include "Managers/TDGoldManager.h"
 #include "Towers/TDTowerSlot.h"
 #include "Managers/TDWidgetManager.h"
 
-ATDTower_Base::ATDTower_Base()
+ATDTower::ATDTower()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
@@ -13,33 +17,31 @@ ATDTower_Base::ATDTower_Base()
 	RootComponent = MeshComponent;
 }
 
-void ATDTower_Base::BeginPlay()
+void ATDTower::BeginPlay()
 {
 	Super::BeginPlay();
 	NormalMaterial = MeshComponent->GetMaterial(0);
 	CurrentGameMode = Cast<ATDGameMode>(GetWorld()->GetAuthGameMode());
-	
 }
 
-void ATDTower_Base::Tick(float DeltaTime)
+void ATDTower::OnStartHover()
 {
-	Super::Tick(DeltaTime);
-}
+	bool bConditionUpgrade = CurrentGameMode->MainWidgetManager->CurrentEditMode != ETDEditMode::UPGRADE
+	||	(CurrentGameMode->GoldManager->CanPurchaseUpgrade(AbilitySystem->GetUpgradePrice())
+	&& !AbilitySystem->IsTowerAtMaxLevel());
 
-void ATDTower_Base::OnStartHover()
-{
-	auto Material = CurrentGameMode->GoldManager->CanPurchaseUpgrade(UpgradeCost)? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
+	auto Material = bConditionUpgrade ? HighlightedMaterial : HighlightNotEnoughGoldMaterial;
 	MeshComponent->SetMaterial(0, Material);
-	CurrentGameMode->MainWidgetManager->UpdateWidgetUpgradePrice(UpgradeCost);
+	CurrentGameMode->MainWidgetManager->UpdateWidgetUpgradePrice(AbilitySystem->GetUpgradePrice());
 }
 
-void ATDTower_Base::OnStopHover()
+void ATDTower::OnStopHover()
 {
 	MeshComponent->SetMaterial(0, NormalMaterial);
 	CurrentGameMode->MainWidgetManager->UpdateWidgetUpgradePrice(0);
 }
 
-void ATDTower_Base::OnClick()
+void ATDTower::OnClick()
 {
 	FRotator NewRotation = GetActorRotation();
 	switch(CurrentGameMode->MainWidgetManager->GetEditMode())
@@ -51,27 +53,24 @@ void ATDTower_Base::OnClick()
 		break;
 	case ETDEditMode::DELETE_TOWER:
 		Destroy();
+		AbilitySystem->MarkAsDestroyed();
 		CurrentGameMode->TriggerUpdateDebug();
 		break;
 	case ETDEditMode::UPGRADE:
-		if(!CurrentGameMode->GoldManager->CanPurchaseUpgrade(UpgradeCost))
+		if(!CurrentGameMode->GoldManager->CanPurchaseUpgrade(AbilitySystem->GetUpgradePrice()) || AbilitySystem->IsTowerAtMaxLevel())
 		{
 			return;
 		}
 
-		UpgradeTower();
-		CurrentGameMode->GoldManager->ChangeGoldCount(UpgradeCost);
+		AbilitySystem->UpgradeTower();
+		CurrentGameMode->GoldManager->ChangeGoldCount(-AbilitySystem->GetUpgradePrice());
+		CurrentGameMode->TriggerUpdateDebug();
 		break;
 	}
 }
 
-void ATDTower_Base::Destroyed()
+void ATDTower::Destroyed()
 {
 	Super::Destroyed();
 	OnDestructionEvent.ExecuteIfBound();
 }
-
-void ATDTower_Base::UpgradeTower()
-{
-}
-

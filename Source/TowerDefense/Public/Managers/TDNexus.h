@@ -20,7 +20,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere)
 	int CurrentNexusHealthPoints;
-	
+
 protected:
 	virtual void BeginPlay() override;
 

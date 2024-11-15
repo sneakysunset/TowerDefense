@@ -24,3 +24,8 @@ void UTDWidgetManager::UpdateWidgetUpgradePrice(int NewUpgradePrice)
 	MainUserWidget->UpdateUpgradePrice(NewUpgradePrice);
 }
 
+void UTDWidgetManager::UpdateWidgetNexusHP(float newPercent)
+{
+	MainUserWidget->OnNexusHealthChange(newPercent);
+}
+

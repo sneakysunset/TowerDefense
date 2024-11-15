@@ -14,20 +14,20 @@ class UTDGoldManager;
 class UTDWidgetManager;
 class UTDWaveManager;
 class ATDNexus;
-class ATDMonster_Base;
+class ATDMonster;
 class ATDMonsterSpline;
-class ATDTower_Base;
+class ATDTower;
 
 USTRUCT()
-struct FTowerSpawn
+struct FTowerSpawnParams
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	int Cost = 100;
+	int Cost;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<ATDTower_Base> TowerPrefab;
+	TSubclassOf<ATDTower> TowerPrefab;
 };
 
 UCLASS()
@@ -57,7 +57,7 @@ public:
 	
 private:
 	UPROPERTY(EditAnywhere)
-	TMap<ETDTowerType, FTowerSpawn> TowerDictionary;
+	TMap<ETDTowerType, FTowerSpawnParams> TowerCostDictionary;
 
 
 protected:
@@ -68,16 +68,18 @@ protected:
 	
 public:
 	UFUNCTION()
-	void OnHitNexus(ATDMonster_Base* Monster, int Damage);
-
-	UFUNCTION()
-	bool SpawnTower(FVector Position, AActor* TowerOwner, ATDTower_Base*& OutTower);
+	void OnHitNexus(ATDMonster* Monster, int Damage);
 	
 	UFUNCTION(BlueprintCallable)
-	int GetTowerCost(ETDTowerType TowerType){return TowerDictionary[TowerType].Cost;}
+	int GetTowerCost(ETDTowerType TowerType){return TowerCostDictionary.Contains(TowerType) ? TowerCostDictionary[TowerType].Cost : 0;}
 
-	UFUNCTION()
-	FTowerSpawn GetTowerSpawnParams(ETDTowerType TowerType){ return TowerDictionary[TowerType];}
+	UFUNCTION(BlueprintCallable)
+	int GetCurrentTowerCost(){return TowerCostDictionary.Contains(MainWidgetManager->CurrentTowerSpawnType) ?
+		TowerCostDictionary[MainWidgetManager->CurrentTowerSpawnType].Cost : 0;}
+	
+	UFUNCTION(BlueprintCallable)
+	TSubclassOf<ATDTower> GetCurrentTowerPrefab(){return TowerCostDictionary.Contains(MainWidgetManager->CurrentTowerSpawnType) ?
+		TowerCostDictionary[MainWidgetManager->CurrentTowerSpawnType].TowerPrefab: 0;}
 
 	UFUNCTION(BlueprintCallable)
 	void TriggerUpdateDebug();

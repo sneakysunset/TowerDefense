@@ -18,35 +18,43 @@ public:
 	
 private :
 	UPROPERTY(EditAnywhere)
-	float TimeBeforeFirstWave;
-	
-	UPROPERTY(EditAnywhere)
 	TArray<FMonsterWave> EditorMonsterWaves;
 	
 	TQueue<FMonsterWave> RuntimeMonsterWaves;
 	
 	UPROPERTY()
-	TSet<TObjectPtr<ATDMonster_Base>> CurrentMonsters;
+	TSet<TObjectPtr<ATDMonster>> CurrentMonsters;
 
-	UPROPERTY()
-	FTimerHandle SpawnTimerHandle;
+	FTimerHandle WaveTimerHandle;
 
 	UPROPERTY()
 	TObjectPtr<ATDMonsterSpline> SplineManager;
+	
+	UPROPERTY()
+	int WaveMonsterCounter;
 
+	UPROPERTY()
+	int WaveCounter;
+
+	UPROPERTY(EditAnywhere)
+	FBossWave BossWave;
+	
 protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void SpawnMonster();
+	void SpawnMonster(FMonsterWave CurrentMonsterWave);
 
+	UFUNCTION()
+	void SpawnBoss();
+	
 public:
 	UFUNCTION()
-	void OnMonsterDestroyed(ATDMonster_Base* Monster);
+	void OnMonsterDestroyed(ATDMonster* Monster);
 
 	UFUNCTION()
 	void SetSplineManager(ATDMonsterSpline* InSplineManager){SplineManager = InSplineManager;}
 
 	UFUNCTION()
-	TArray<ATDMonster_Base*> GetMonsters();
+	TArray<ATDMonster*> GetMonsters();
 };

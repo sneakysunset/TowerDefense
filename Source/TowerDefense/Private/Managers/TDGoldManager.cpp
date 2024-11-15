@@ -16,7 +16,7 @@ void UTDGoldManager::OnStart()
 bool UTDGoldManager::CanPurchaseTower()
 {
 	auto CurrentTowerType = OwningGameMode->MainWidgetManager->GetCurrentTowerSpawnType();
-	return CurrentGoldCount >= OwningGameMode->GetTowerSpawnParams(CurrentTowerType).Cost;
+	return CurrentGoldCount >= OwningGameMode->GetTowerCost(CurrentTowerType);
 }
 
 bool UTDGoldManager::CanPurchaseUpgrade(int UpgradeCost)
@@ -27,11 +27,11 @@ bool UTDGoldManager::CanPurchaseUpgrade(int UpgradeCost)
 void UTDGoldManager::PurchaseTower()
 {
 	auto CurrentTowerType = OwningGameMode->MainWidgetManager->GetCurrentTowerSpawnType();
-	ChangeGoldCount(OwningGameMode->GetTowerSpawnParams(CurrentTowerType).Cost);
+	ChangeGoldCount(-OwningGameMode->GetTowerCost(CurrentTowerType));
 }
 
 void UTDGoldManager::ChangeGoldCount(int Cost)
 {
-	CurrentGoldCount -= Cost;
+	CurrentGoldCount += Cost;
 	OwningGameMode->MainWidgetManager->MainUserWidget->UpdateCost(CurrentGoldCount);
 }

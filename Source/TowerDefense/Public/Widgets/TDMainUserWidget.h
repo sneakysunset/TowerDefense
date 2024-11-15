@@ -22,4 +22,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnBeginPlay();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnNexusHealthChange(float newNexusHealthPercent);
+
 };

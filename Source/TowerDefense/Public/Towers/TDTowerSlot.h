@@ -8,7 +8,7 @@
 #include "TDTowerSlot.generated.h"
 
 class ATDGameMode;
-class ATDTower_Base;
+class ATDTower;
 
 
 UCLASS()
@@ -16,9 +16,9 @@ class TOWERDEFENSE_API ATDTowerSlot : public AActor, public ITDHoverable, public
 {
 	GENERATED_BODY()
 
-public:
 	ATDTowerSlot();
 	
+private:
 	UPROPERTY(EditAnywhere, Category="", meta=(AllowPrivateAccess))
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
 
@@ -32,9 +32,11 @@ public:
 	TObjectPtr<UMaterialInterface> NormalMaterial;
 	
 	UPROPERTY()
-	TObjectPtr<ATDTower_Base> CurrentTower;
+	TObjectPtr<ATDTower> CurrentTower;
 
+	UPROPERTY()
 	TObjectPtr<ATDGameMode> CurrentGameMode;
+	
 	
 protected:
 	virtual void BeginPlay() override;
@@ -44,10 +46,7 @@ protected:
 	
 public:
 	UFUNCTION()
-	ATDTower_Base* GetTower(){return CurrentTower;}
-
-	UFUNCTION()
-	void SetTower(ATDTower_Base* NewTower){CurrentTower = NewTower;}
+	ATDTower* GetTower(){return CurrentTower;}
 
 	UFUNCTION()
 	void OnTowerDestroyed(){CurrentTower = nullptr;}
